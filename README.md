@@ -19,7 +19,7 @@ This stack is composed of the following specialized FreeBSD containers:
 
 1.  **Download `.env`** from official Immich releases:
     ```bash
-    fetch https://github.com/immich-app/immich/releases/latest/download/.env
+    fetch https://github.com/immich-app/immich/releases/latest/download/example.env
     ```
 
 2.  **Download `docker-compose.yml`**:
