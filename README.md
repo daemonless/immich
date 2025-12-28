@@ -18,10 +18,10 @@ This stack is composed of the following specialized FreeBSD containers:
 ## Prerequisites
 
 ```bash
-pkg install podman-suite dnsmasq cni-dnsname
+pkg install podman-suite cni-dnsname
 ```
 
-The `dnsmasq` and `cni-dnsname` packages enable DNS resolution between containers.
+The `cni-dnsname` package enables DNS resolution between containers.
 
 ## Quick Start (Compose)
 
@@ -79,7 +79,7 @@ The `dnsmasq` and `cni-dnsname` packages enable DNS resolution between container
 
 | Path (Host) | Container Path | Description |
 |-------------|----------------|-------------|
-| `${UPLOAD_LOCATION}` | `/usr/src/app/library` | Main media library |
+| `${UPLOAD_LOCATION}` | `/data` | Main media library |
 | `pgdata` (Volume) | `/config/data` | Database files |
 | `redis-data` (Volume) | `/config/data` | Redis persistence |
 

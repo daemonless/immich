@@ -4,7 +4,7 @@
 # Drop-in compatible with official Immich docker-compose.yml
 #
 # Prerequisites:
-#   pkg install podman-suite dnsmasq cni-dnsname
+#   pkg install podman-suite cni-dnsname
 #
 # Usage:
 #   1. Create .env file (see README.md)
@@ -18,7 +18,7 @@ services:
     container_name: immich_server
     image: ghcr.io/daemonless/immich-server:latest
     volumes:
-      - ${UPLOAD_LOCATION}:/usr/src/app/library
+      - ${UPLOAD_LOCATION}:/data
       - /etc/localtime:/etc/localtime:ro
     env_file:
       - .env
