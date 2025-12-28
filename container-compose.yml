@@ -4,7 +4,7 @@
 # Drop-in compatible with official Immich docker-compose.yml
 #
 # Prerequisites:
-#   pkg install podman-suite cni-dnsname
+#   pkg install podman-suite cni-dnsname py311-podman-compose
 #
 # Usage:
 #   1. Create .env file (see README.md)

@@ -18,10 +18,11 @@ This stack is composed of the following specialized FreeBSD containers:
 ## Prerequisites
 
 ```bash
-pkg install podman-suite cni-dnsname
+pkg install podman-suite cni-dnsname py311-podman-compose
 ```
 
-The `cni-dnsname` package enables DNS resolution between containers.
+- `cni-dnsname` enables DNS resolution between containers
+- `py311-podman-compose` runs the compose file
 
 ## Quick Start (Compose)
 
