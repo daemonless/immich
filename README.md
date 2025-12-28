@@ -29,7 +29,7 @@ The `dnsmasq` and `cni-dnsname` packages enable DNS resolution between container
     ```bash
     mkdir -p /containers/immich
     cd /containers/immich
-    fetch https://raw.githubusercontent.com/daemonless/immich/main/container-compose.yml -o docker-compose.yml
+    fetch https://raw.githubusercontent.com/daemonless/immich/main/container-compose.yml -o container-compose.yml
     ```
 
 2.  **Create `.env` file**:
