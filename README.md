@@ -15,20 +15,41 @@ This stack is composed of the following specialized FreeBSD containers:
 | **Redis** | [`ghcr.io/daemonless/redis`](https://github.com/daemonless/redis) | Redis cache (FreeBSD package) |
 | **Machine Learning** | [`ghcr.io/daemonless/immich-ml`](https://github.com/daemonless/immich-ml) | Native ML service (CPU only) |
 
+## Prerequisites
+
+```bash
+pkg install podman-suite dnsmasq cni-dnsname
+```
+
+The `dnsmasq` and `cni-dnsname` packages enable DNS resolution between containers.
+
 ## Quick Start (Compose)
 
-1.  **Download `.env`** from official Immich releases:
+1.  **Create directory and download files**:
     ```bash
-    fetch https://github.com/immich-app/immich/releases/latest/download/example.env
+    mkdir -p /containers/immich
+    cd /containers/immich
+    fetch https://raw.githubusercontent.com/daemonless/immich/main/container-compose.yml -o docker-compose.yml
     ```
 
-2.  **Download `docker-compose.yml`**:
+2.  **Create `.env` file**:
     ```bash
-    fetch https://raw.githubusercontent.com/daemonless/immich/main/docker-compose.yml
+    cat > .env << 'EOF'
+    # Immich configuration for FreeBSD
+    # IMPORTANT: Use absolute paths, not relative paths
+
+    UPLOAD_LOCATION=/containers/immich/library
+    DB_PASSWORD=changeme
+    DB_USERNAME=postgres
+    DB_DATABASE_NAME=immich
+    EOF
     ```
 
-3.  **Configure `.env`**:
-    Edit the file and set `UPLOAD_LOCATION` to your desired storage path.
+3.  **Create library directory**:
+    ```bash
+    mkdir -p /containers/immich/library
+    chown 1000:1000 /containers/immich/library
+    ```
 
 4.  **Start the Stack**:
     ```bash
@@ -39,15 +60,14 @@ This stack is composed of the following specialized FreeBSD containers:
 
 ## Environment Variables
 
-The stack relies on the standard Immich `.env` file. Key variables include:
-
-| Variable | Description | Default |
+| Variable | Description | Example |
 |----------|-------------|---------|
-| `UPLOAD_LOCATION` | Path on host to store photos/videos | `./library` |
-| `DB_PASSWORD` | PostgreSQL password | `postgres` |
+| `UPLOAD_LOCATION` | **Absolute path** to store photos/videos | `/containers/immich/library` |
+| `DB_PASSWORD` | PostgreSQL password (change this!) | `changeme` |
 | `DB_USERNAME` | PostgreSQL user | `postgres` |
 | `DB_DATABASE_NAME` | PostgreSQL database name | `immich` |
-| `IMMICH_MACHINE_LEARNING_URL` | URL to ML service | *Required if external* |
+
+**Important**: `UPLOAD_LOCATION` must be an absolute path (e.g., `/containers/immich/library`), not a relative path like `./library`.
 
 ## Ports
 
@@ -59,16 +79,15 @@ The stack relies on the standard Immich `.env` file. Key variables include:
 
 | Path (Host) | Container Path | Description |
 |-------------|----------------|-------------|
-| `${UPLOAD_LOCATION}` | `/usr/src/app/upload` | Main media library |
+| `${UPLOAD_LOCATION}` | `/usr/src/app/library` | Main media library |
 | `pgdata` (Volume) | `/config/data` | Database files |
 | `redis-data` (Volume) | `/config/data` | Redis persistence |
 
 ## Machine Learning
 
-Immich Machine Learning is natively supported on FreeBSD. 
+Immich Machine Learning is natively supported on FreeBSD.
 
-!!! note "CPU Only"
-    Machine Learning on FreeBSD currently runs on the **CPU only**. Hardware acceleration (GPU/NPU) is not yet supported.
+**Note**: Machine Learning on FreeBSD currently runs on the **CPU only**. Hardware acceleration (GPU/NPU) is not yet supported.
 
 ## Logging
 

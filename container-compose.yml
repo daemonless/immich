@@ -3,11 +3,12 @@
 #
 # Drop-in compatible with official Immich docker-compose.yml
 #
+# Prerequisites:
+#   pkg install podman-suite dnsmasq cni-dnsname
+#
 # Usage:
-#   1. Download .env from official Immich repo:
-#      fetch https://github.com/immich-app/immich/releases/latest/download/.env
-#   2. Edit .env (set UPLOAD_LOCATION, DB_PASSWORD, etc.)
-#   3. Run with podman-compose up -d
+#   1. Create .env file (see README.md)
+#   2. Run with podman-compose up -d
 #
 
 name: immich
@@ -16,9 +17,8 @@ services:
   immich-server:
     container_name: immich_server
     image: ghcr.io/daemonless/immich-server:latest
-    # For hardware acceleration, add one of - platform: ... lines here if supported
     volumes:
-      - ${UPLOAD_LOCATION}:/usr/src/app/upload
+      - ${UPLOAD_LOCATION}:/usr/src/app/library
       - /etc/localtime:/etc/localtime:ro
     env_file:
       - .env
@@ -30,10 +30,12 @@ services:
       - immich-machine-learning
     restart: always
 
-  # Machine Learning
   immich-machine-learning:
     container_name: immich_machine_learning
     image: ghcr.io/daemonless/immich-ml:latest
+    environment:
+      HF_HOME: /cache/huggingface
+      MPLCONFIGDIR: /tmp
     volumes:
       - model-cache:/cache
     env_file:
@@ -45,14 +47,13 @@ services:
     image: ghcr.io/daemonless/redis:latest
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      # Map standard redis volume to daemonless config path
       - redis-data:/config
     restart: always
 
   database:
     container_name: immich_postgres
     image: ghcr.io/daemonless/immich-postgres:latest
-    # FreeBSD Jail Annotation for PostgreSQL Shared Memory
+    # FreeBSD requires sysvipc for PostgreSQL shared memory
     annotations:
       org.freebsd.jail.allow.sysvipc: "true"
     environment:
@@ -62,7 +63,6 @@ services:
       PG_DATA: /config/data
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      # Map standard postgres volume to daemonless config path
       - pgdata:/config
     restart: always
 
