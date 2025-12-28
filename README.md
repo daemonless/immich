@@ -13,7 +13,7 @@ This stack is composed of the following specialized FreeBSD containers:
 | **Server** | [`ghcr.io/daemonless/immich-server`](https://github.com/daemonless/immich-server) | Main Node.js application (Web/API) |
 | **Database** | [`ghcr.io/daemonless/immich-postgres`](https://github.com/daemonless/immich-postgres) | PostgreSQL 14 with `pgvecto.rs` extension |
 | **Redis** | [`ghcr.io/daemonless/redis`](https://github.com/daemonless/redis) | Redis cache (FreeBSD package) |
-| **Machine Learning** | *External / Experimental* | See below |
+| **Machine Learning** | [`ghcr.io/daemonless/immich-ml`](https://github.com/daemonless/immich-ml) | Native ML service (CPU only) |
 
 ## Quick Start (Compose)
 
@@ -65,14 +65,10 @@ The stack relies on the standard Immich `.env` file. Key variables include:
 
 ## Machine Learning
 
-FreeBSD does not currently support the Immich Machine Learning container natively due to missing `onnxruntime` Python bindings for FreeBSD.
+Immich Machine Learning is natively supported on FreeBSD. 
 
-**Workaround:**
-Run the official `immich-machine-learning` container on a Linux host (or Linux VM/Jail) and point your FreeBSD server to it via `.env`:
-
-```bash
-IMMICH_MACHINE_LEARNING_URL=http://<linux-host-ip>:3003
-```
+!!! note "CPU Only"
+    Machine Learning on FreeBSD currently runs on the **CPU only**. Hardware acceleration (GPU/NPU) is not yet supported.
 
 ## Logging
 

@@ -27,22 +27,18 @@ services:
     depends_on:
       - redis
       - database
+      - immich-machine-learning
     restart: always
 
   # Machine Learning
-  # NOTE: FreeBSD does not currently support the ML container natively (missing onnxruntime).
-  # You have two options:
-  # 1. Run this container on a Linux host and point immich-server to it via IMMICH_MACHINE_LEARNING_URL
-  # 2. Uncomment below to try experimental FreeBSD support (CPU only, strictly experimental)
-  #
-  # immich-machine-learning:
-  #   container_name: immich_machine_learning
-  #   image: ghcr.io/daemonless/immich-ml:latest
-  #   volumes:
-  #     - model-cache:/cache
-  #   env_file:
-  #     - .env
-  #   restart: always
+  immich-machine-learning:
+    container_name: immich_machine_learning
+    image: ghcr.io/daemonless/immich-ml:latest
+    volumes:
+      - model-cache:/cache
+    env_file:
+      - .env
+    restart: always
 
   redis:
     container_name: immich_redis
