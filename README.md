@@ -24,6 +24,8 @@ pkg install podman-suite cni-dnsname py311-podman-compose
 - `cni-dnsname` enables DNS resolution between containers
 - `py311-podman-compose` runs the compose file
 
+**Important:** PostgreSQL requires `allow.sysvipc` jail annotation for shared memory. This requires a patched version of `ocijail`. See the [ocijail patch guide](https://daemonless.io/guides/ocijail-patch/) for build instructions.
+
 ## Quick Start (Compose)
 
 1.  **Create directory and download files**:
