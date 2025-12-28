@@ -90,6 +90,44 @@ Immich Machine Learning is natively supported on FreeBSD.
 
 **Note**: Machine Learning on FreeBSD currently runs on the **CPU only**. Hardware acceleration (GPU/NPU) is not yet supported.
 
+### GPU Acceleration (Remote ML)
+
+For faster ML inference, you can run the official Immich ML container on a Linux host with GPU acceleration and point your FreeBSD server to it.
+
+**Supported GPUs:**
+- **Intel** (OpenVINO): Core Ultra, Arc, 11th gen+
+- **NVIDIA** (CUDA): Most modern GPUs
+
+**1. Deploy ML on Linux host with Intel GPU:**
+
+```bash
+# On Linux host (e.g., Fedora, Ubuntu)
+sudo podman run -d \
+  --name immich_machine_learning \
+  --device /dev/dri:/dev/dri \
+  -v immich-ml-cache:/cache \
+  -e MACHINE_LEARNING_WORKERS=1 \
+  -p 3003:3003 \
+  --restart unless-stopped \
+  ghcr.io/immich-app/immich-machine-learning:release-openvino
+```
+
+For NVIDIA GPUs, use `ghcr.io/immich-app/immich-machine-learning:release-cuda` with `--gpus all`.
+
+**2. Configure FreeBSD server to use remote ML:**
+
+Add to your `.env` file:
+```bash
+IMMICH_MACHINE_LEARNING_URL=http://<linux-host-ip>:3003
+```
+
+**3. Restart the stack:**
+```bash
+podman-compose down && podman-compose up -d
+```
+
+The server will now use the GPU-accelerated ML service on your Linux host.
+
 ## Logging
 
 Each container in this stack uses `s6-log` for log management:
