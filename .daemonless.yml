@@ -1,4 +1,5 @@
-title: Immich
 category: Media
-type: stack
 description: Self-hosted photo and video management solution.
+icon: ':simple-googlephotos:'
+title: Immich
+type: stack
