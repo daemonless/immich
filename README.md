@@ -11,20 +11,19 @@ This stack is composed of the following specialized FreeBSD containers:
 | Service | Container Image | Description |
 |---------|-----------------|-------------|
 | **Server** | [`ghcr.io/daemonless/immich-server`](https://github.com/daemonless/immich-server) | Main Node.js application (Web/API) |
-| **Database** | [`ghcr.io/daemonless/immich-postgres`](https://github.com/daemonless/immich-postgres) | PostgreSQL 14 with `pgvecto.rs` extension |
+| **Database** | [`ghcr.io/daemonless/immich-postgres`](https://github.com/daemonless/immich-postgres) | PostgreSQL 14 with pgvector + VectorChord |
 | **Redis** | [`ghcr.io/daemonless/redis`](https://github.com/daemonless/redis) | Redis cache (FreeBSD package) |
 | **Machine Learning** | [`ghcr.io/daemonless/immich-ml`](https://github.com/daemonless/immich-ml) | Native ML service (CPU only) |
 
 ## Prerequisites
 
 ```bash
-pkg install podman-suite cni-dnsname py311-podman-compose
+pkg install podman-suite py311-podman-compose
 ```
 
-- `cni-dnsname` enables DNS resolution between containers
-- `py311-podman-compose` runs the compose file
-
 **Important:** PostgreSQL requires `allow.sysvipc` jail annotation for shared memory. This requires a patched version of `ocijail`. See the [ocijail patch guide](https://daemonless.io/guides/ocijail-patch/) for build instructions.
+
+**Networking:** This stack uses host networking so containers communicate via `localhost`. No additional CNI plugins required.
 
 ## Quick Start (Compose)
 
@@ -129,6 +128,28 @@ podman-compose down && podman-compose up -d
 ```
 
 The server will now use the GPU-accelerated ML service on your Linux host.
+
+## Advanced: DNS Networking
+
+By default, this stack uses host networking for simplicity. If you prefer container isolation with DNS-based service discovery (like Docker), you can use `cni-dnsname`.
+
+!!! note "cni-dnsname is not in official FreeBSD ports"
+    We maintain a port at [github.com/daemonless/freebsd-ports](https://github.com/daemonless/freebsd-ports)
+
+**1. Install cni-dnsname:**
+```bash
+fetch -o /tmp/cni-dnsname.tar.gz https://github.com/daemonless/freebsd-ports/archive/refs/heads/main.tar.gz
+tar -xzf /tmp/cni-dnsname.tar.gz -C /tmp
+cd /tmp/freebsd-ports-main/net/cni-dnsname
+make install clean
+```
+
+**2. Use the bridge networking compose file:**
+```bash
+fetch https://raw.githubusercontent.com/daemonless/immich/main/container-compose-bridge.yml -o container-compose.yml
+```
+
+This variant removes `network_mode: host` and uses container names for service discovery.
 
 ## Logging
 

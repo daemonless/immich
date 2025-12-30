@@ -1,10 +1,12 @@
 #
-# Immich for FreeBSD (Daemonless)
+# Immich for FreeBSD (Daemonless) - Bridge Networking
 #
-# Drop-in compatible with official Immich docker-compose.yml
+# Requires cni-dnsname for container DNS resolution.
+# See: https://github.com/daemonless/freebsd-ports
 #
 # Prerequisites:
 #   pkg install podman-suite py311-podman-compose
+#   # Install cni-dnsname from daemonless/freebsd-ports
 #
 # Usage:
 #   1. Create .env file (see README.md)
@@ -17,12 +19,13 @@ services:
   immich-server:
     container_name: immich_server
     image: ghcr.io/daemonless/immich-server:latest
-    network_mode: host
     volumes:
       - ${UPLOAD_LOCATION}:/data
       - /etc/localtime:/etc/localtime:ro
     env_file:
       - .env
+    ports:
+      - 2283:2283
     depends_on:
       - redis
       - database
@@ -32,7 +35,6 @@ services:
   immich-machine-learning:
     container_name: immich_machine_learning
     image: ghcr.io/daemonless/immich-ml:latest
-    network_mode: host
     environment:
       HF_HOME: /cache/huggingface
       MPLCONFIGDIR: /tmp
@@ -45,7 +47,6 @@ services:
   redis:
     container_name: immich_redis
     image: ghcr.io/daemonless/redis:latest
-    network_mode: host
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - redis-data:/config
@@ -54,7 +55,6 @@ services:
   database:
     container_name: immich_postgres
     image: ghcr.io/daemonless/immich-postgres:latest
-    network_mode: host
     # FreeBSD requires sysvipc for PostgreSQL shared memory
     annotations:
       org.freebsd.jail.allow.sysvipc: "true"
