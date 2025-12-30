@@ -21,6 +21,10 @@ services:
     volumes:
       - ${UPLOAD_LOCATION}:/data
       - /etc/localtime:/etc/localtime:ro
+    environment:
+      DB_HOSTNAME: localhost
+      REDIS_HOSTNAME: localhost
+      IMMICH_MACHINE_LEARNING_URL: http://localhost:3003
     env_file:
       - .env
     depends_on:
