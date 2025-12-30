@@ -47,10 +47,14 @@ pkg install podman-suite py311-podman-compose
     EOF
     ```
 
-3.  **Create library directory**:
+3.  **Create library directory with required subdirectories**:
     ```bash
     mkdir -p /containers/immich/library
-    chown 1000:1000 /containers/immich/library
+    for dir in thumbs upload backups library profile encoded-video; do
+      mkdir -p /containers/immich/library/$dir
+      touch /containers/immich/library/$dir/.immich
+    done
+    chown -R 1000:1000 /containers/immich/library
     ```
 
 4.  **Start the Stack**:
