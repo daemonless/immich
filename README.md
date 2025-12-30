@@ -133,8 +133,7 @@ The server will now use the GPU-accelerated ML service on your Linux host.
 
 By default, this stack uses host networking for simplicity. If you prefer container isolation with DNS-based service discovery (like Docker), you can use `cni-dnsname`.
 
-!!! note "cni-dnsname is not in official FreeBSD ports"
-    We maintain a port at [github.com/daemonless/freebsd-ports](https://github.com/daemonless/freebsd-ports)
+> **Note:** cni-dnsname is not in official FreeBSD ports. We maintain a port at [github.com/daemonless/freebsd-ports](https://github.com/daemonless/freebsd-ports)
 
 **1. Install cni-dnsname:**
 ```bash
