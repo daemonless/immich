@@ -1,0 +1,78 @@
+#
+# Immich for FreeBSD (Daemonless)
+#
+# Drop-in compatible with official Immich docker-compose.yml
+#
+# Prerequisites:
+#   pkg install podman-suite py311-podman-compose
+#
+# Usage:
+#   1. Create .env file (see README.md)
+#   2. Run with podman-compose up -d
+#
+
+name: immich
+
+services:
+  immich-server:
+    container_name: immich_server
+    image: ghcr.io/daemonless/immich-server:latest
+    network_mode: host
+    volumes:
+      - ${UPLOAD_LOCATION}:/data
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      DB_HOSTNAME: localhost
+      REDIS_HOSTNAME: localhost
+      IMMICH_MACHINE_LEARNING_URL: http://localhost:3003
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - database
+      - immich-machine-learning
+    restart: always
+
+  immich-machine-learning:
+    container_name: immich_machine_learning
+    image: ghcr.io/daemonless/immich-ml:latest
+    network_mode: host
+    environment:
+      HF_HOME: /cache/huggingface
+      MPLCONFIGDIR: /tmp
+    volumes:
+      - model-cache:/cache
+    env_file:
+      - .env
+    restart: always
+
+  redis:
+    container_name: immich_redis
+    image: ghcr.io/daemonless/redis:latest
+    network_mode: host
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - redis-data:/config
+    restart: always
+
+  database:
+    container_name: immich_postgres
+    image: ghcr.io/daemonless/immich-postgres:latest
+    network_mode: host
+    # FreeBSD requires sysvipc for PostgreSQL shared memory
+    annotations:
+      org.freebsd.jail.allow.sysvipc: "true"
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_DB: ${DB_DATABASE_NAME}
+      PG_DATA: /config/data
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - pgdata:/config
+    restart: always
+
+volumes:
+  pgdata:
+  model-cache:
+  redis-data:
