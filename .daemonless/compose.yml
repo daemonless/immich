@@ -1,0 +1,30 @@
+# Minimal compose for cit testing (no ML)
+name: immich-test
+
+services:
+  database:
+    image: ghcr.io/daemonless/immich-postgres:latest
+    network_mode: host
+    annotations:
+      org.freebsd.jail.allow.sysvipc: "true"
+    environment:
+      POSTGRES_PASSWORD: test
+      POSTGRES_USER: immich
+      POSTGRES_DB: immich
+
+  redis:
+    image: ghcr.io/daemonless/redis:latest
+    network_mode: host
+
+  immich-server:
+    image: ghcr.io/daemonless/immich-server:latest
+    network_mode: host
+    environment:
+      DB_HOSTNAME: localhost
+      DB_PASSWORD: test
+      DB_USERNAME: immich
+      DB_DATABASE_NAME: immich
+      REDIS_HOSTNAME: localhost
+    depends_on:
+      - redis
+      - database

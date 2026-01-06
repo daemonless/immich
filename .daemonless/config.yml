@@ -3,3 +3,8 @@ description: Self-hosted photo and video management solution.
 icon: ':simple-googlephotos:'
 title: Immich
 type: stack
+cit:
+  mode: screenshot
+  compose: true
+  port: 2283
+  health: /api/server/ping
