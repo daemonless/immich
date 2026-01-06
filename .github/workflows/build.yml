@@ -10,7 +10,7 @@ on:
 
 jobs:
   test:
-    uses: daemonless/daemonless/.github/workflows/test-compose.yml@main
+    uses: daemonless/daemonless/.github/workflows/build-app.yml@main
     with:
-      stack_name: immich
+      image_name: immich
     secrets: inherit
