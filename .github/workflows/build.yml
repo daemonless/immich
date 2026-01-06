@@ -1,4 +1,4 @@
-name: Build FreeBSD Container
+name: Test Compose Stack
 
 on:
   push:
@@ -9,8 +9,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    uses: daemonless/daemonless/.github/workflows/build-app.yml@main
+  test:
+    uses: daemonless/daemonless/.github/workflows/test-compose.yml@main
     with:
-      image_name: immich
+      stack_name: immich
     secrets: inherit
