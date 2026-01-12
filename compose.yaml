@@ -1,0 +1,90 @@
+name: immich
+
+x-daemonless:
+  title: "Immich Stack"
+  icon: ":simple-googlephotos:"
+  category: "Photos & Media"
+  description: "Complete self-hosted photo and video management solution."
+  upstream_url: "https://github.com/immich-app/immich"
+  web_url: "https://immich.app/"
+  freshports_url: ""
+  user: "multiple"
+  mlock: false
+  upstream_binary: true
+  
+  docs:
+    env:
+      PUID: "User ID for application processes"
+      PGID: "Group ID for application processes"
+      TZ: "Timezone"
+      DB_PASSWORD: "Postgres database password"
+      UPLOAD_LOCATION: "Path to store uploaded media"
+    volumes:
+      /config: "Configuration files"
+      /data: "Media storage (mapped to UPLOAD_LOCATION)"
+      /var/lib/postgresql/data: "Database data"
+      /cache: "ML model cache"
+    ports:
+      2283: "Web UI"
+
+services:
+  immich-server:
+    image: ghcr.io/daemonless/immich-server:latest
+    container_name: immich_server
+    restart: unless-stopped
+    environment:
+      - DB_HOSTNAME=immich_postgres
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - DB_DATABASE_NAME=immich
+      - REDIS_HOSTNAME=immich_redis
+      - PUID=1000
+      - PGID=1000
+      - TZ=UTC
+    volumes:
+      - /path/to/containers/immich/config:/config
+      - ${UPLOAD_LOCATION}:/data
+    ports:
+      - "2283:2283"
+    depends_on:
+      - immich-redis
+      - immich-postgres
+
+  immich-ml:
+    image: ghcr.io/daemonless/immich-ml:latest
+    container_name: immich_ml
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=UTC
+    volumes:
+      - /path/to/containers/immich/cache:/cache
+
+  immich-postgres:
+    image: ghcr.io/daemonless/immich-postgres:latest
+    container_name: immich_postgres
+    restart: unless-stopped
+    # Required for vector extension shared memory
+    annotations:
+      org.freebsd.jail.allow.sysvipc: "true"
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=immich
+      - PUID=1000
+      - PGID=1000
+      - TZ=UTC
+    volumes:
+      - /path/to/containers/immich/postgres:/var/lib/postgresql/data
+
+  immich-redis:
+    image: ghcr.io/daemonless/redis:latest
+    container_name: immich_redis
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=UTC
+    volumes:
+      - /path/to/containers/immich/redis:/data
