@@ -3,6 +3,7 @@ description: Self-hosted photo and video management solution.
 icon: ':simple-googlephotos:'
 title: Immich
 type: stack
+docs: manual
 cit:
   mode: screenshot
   compose: true
