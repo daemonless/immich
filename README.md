@@ -15,7 +15,7 @@ Native FreeBSD port of [Immich](https://immich.app/) - the self-hosted photo and
 | **Source** | [github.com/daemonless/immich](https://github.com/daemonless/immich) |
 
 !!! warning "Requires patched ocijail"
-    This application requires the `allow.mlock` annotation.
+    PostgreSQL requires the `allow.sysvipc` annotation for shared memory.
     See [ocijail patch](../guides/ocijail-patch.md).
 
 ## Quick Start
