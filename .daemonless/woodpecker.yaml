@@ -1,0 +1,19 @@
+# Woodpecker CI configuration (Simplified)
+steps:
+  - name: build
+    image: /bin/sh
+    environment:
+      GITHUB_TOKEN:
+        from_secret: GITHUB_TOKEN
+      GITHUB_ACTOR:
+        from_secret: GITHUB_USER
+    commands:
+      - fetch -qo woodpecker-build.sh "https://raw.githubusercontent.com/daemonless/daemonless/main/scripts/woodpecker-build.sh"
+      - sh woodpecker-build.sh immich
+
+when:
+  - event: push
+    branch: main
+    path:
+      exclude: ["*.md", "docs/**", "LICENSE", ".gitignore"]
+  - event: manual
