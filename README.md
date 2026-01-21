@@ -2,6 +2,11 @@
 
 Self-hosted photo and video management solution.
 
+| | |
+|---|---|
+| **Docs** | [daemonless.io/images/immich](https://daemonless.io/images/immich/) |
+| **Website** | [immich.app](https://immich.app/) |
+
 ## Deployment Instructions
 
 ```sh
