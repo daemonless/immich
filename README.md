@@ -45,7 +45,7 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
 **Requirements:**
 
 - FreeBSD 15.0 with Podman and ocijail
-- `podman-compose` or `podman kube play`
+- `podman-compose`
 - At least 4GB RAM (ML service is memory-intensive)
 - Storage for photos (plan for growth)
 
