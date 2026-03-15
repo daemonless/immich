@@ -21,6 +21,71 @@ x-daemonless:
   upstream_url: https://github.com/immich-app/immich
   web_url: https://immich.app/
   type: stack
+
+  appjail:
+    director:
+      options:
+        - alias:
+        - ip4_inherit:
+      services:
+        immich-server:
+          name: immich_server
+          priority: 100
+          options:
+            - from: ghcr.io/daemonless/immich-server:latest
+          volumes:
+            - immich-data: /data
+          oci:
+            environment:
+              - DB_HOSTNAME: 127.0.0.1
+              - REDIS_HOSTNAME: 127.0.0.1
+              - IMMICH_MACHINE_LEARNING_URL: http://127.0.0.1:3003
+              - TZ: "!ENV '${TZ}'"
+        immich-machine-learning:
+          name: immich_machine_learning
+          options:
+            - from: ghcr.io/daemonless/immich-ml:latest
+          oci:
+            environment:
+              - HF_HOME: /cache/huggingface
+              - MPLCONFIGDIR: /tmp
+              - TZ: "!ENV '${TZ}'"
+          volumes:
+            - model-cache: /cache
+        redis:
+          name: immich_redis
+          options:
+            - from: ghcr.io/daemonless/redis:latest
+          oci:
+            environment:
+              - LANG: C.UTF-8
+              - TZ: "!ENV '${TZ}'"
+          volumes:
+            - redis-data: /config
+        database:
+          name: immich_postgres
+          options:
+            - from: ghcr.io/daemonless/immich-postgres:latest
+            - template: "!ENV '${PWD}/immich-postgres-template.conf'"
+          oci:
+            environment:
+              - POSTGRES_PASSWORD: "!ENV '${DB_PASSWORD}'"
+              - POSTGRES_USER: "!ENV '${DB_USERNAME}'"
+              - POSTGRES_DB: "!ENV '${DB_DATABASE_NAME}'"
+          volumes:
+            - db-data: /var/lib/postgresql/data
+      volumes:
+        immich-data:
+          device: "!ENV '${UPLOAD_LOCATION}'"
+          owner: 1000
+          group: 1000
+        model-cache:
+          device: "!ENV '${CACHE_LOCATION}'"
+        redis-data:
+          device: "!ENV '${REDIS_DATA_LOCATION}'"
+        db-data:
+          device: "!ENV '${DB_DATA_LOCATION}'"
+
   docs:
     manual: true
     env:

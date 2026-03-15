@@ -113,6 +113,108 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
     podman-compose up -d
     ```
 
+=== ":appjail-appjail: AppJail Director"
+
+    **.env**:
+
+    ```
+    UPLOAD_LOCATION=/var/appjail-volumes/immich/library
+    DB_DATA_LOCATION=/var/appjail-volumes/immich/postgres
+    CACHE_LOCATION=/var/appjail-volumes/immich/cache
+    REDIS_DATA_LOCATION=/var/appjail-volumes/immich/redis
+    TZ=America/Caracas
+    DB_PASSWORD=postgres
+    DB_USERNAME=postgres
+    DB_DATABASE_NAME=immich
+    DIRECTOR_PROJECT=immich
+    ```
+
+    **appjail-director.yml**:
+
+    ```yaml
+    options:
+      # Equivalent to 'network_mode: host'
+      - alias:
+      - ip4_inherit:
+    services:
+      immich-server:
+        name: immich_server
+        priority: 100
+        options:
+          - from: ghcr.io/daemonless/immich-server:latest
+        volumes:
+          - immich-data: /data
+        oci:
+          environment:
+            - DB_HOSTNAME: 127.0.0.1
+            - REDIS_HOSTNAME: 127.0.0.1
+            - IMMICH_MACHINE_LEARNING_URL: http://127.0.0.1:3003
+            - TZ: !ENV '${TZ}'
+      immich-machine-learning:
+        name: immich_machine_learning
+        options:
+          - from: ghcr.io/daemonless/immich-ml:latest
+        oci:
+          environment:
+            - HF_HOME: /cache/huggingface
+            - MPLCONFIGDIR: /tmp
+            - TZ: !ENV '${TZ}'
+        volumes:
+          - model-cache: /cache
+      redis:
+        name: immich_redis
+        options:
+          - from: ghcr.io/daemonless/redis:latest
+        oci:
+          environment:
+            - LANG: C.UTF-8
+            - TZ: !ENV '${TZ}'
+        volumes:
+          - redis-data: /config
+      database:
+        name: immich_postgres
+        options:
+          - from: ghcr.io/daemonless/immich-postgres:latest
+          - template: !ENV '${PWD}/immich-postgres-template.conf'
+        oci:
+          environment:
+            - POSTGRES_PASSWORD: !ENV '${DB_PASSWORD}'
+            - POSTGRES_USER: !ENV '${DB_USERNAME}'
+            - POSTGRES_DB: !ENV '${DB_DATABASE_NAME}'
+        volumes:
+          - db-data: /var/lib/postgresql/data
+    volumes:
+      immich-data:
+        device: !ENV '${UPLOAD_LOCATION}'
+        owner: 1000
+        group: 1000
+      model-cache:
+        device: !ENV '${CACHE_LOCATION}'
+      redis-data:
+        device: !ENV '${REDIS_DATA_LOCATION}'
+      db-data:
+        device: !ENV '${DB_DATA_LOCATION}'
+    ```
+
+    **immich-postgres-template.conf**:
+
+    ```
+    exec.start: "/bin/sh /etc/rc"
+    exec.stop: "/bin/sh /etc/rc.shutdown jail"
+    sysvmsg: new
+    sysvsem: new
+    sysvshm: new
+    mount.devfs
+    persist
+    ```
+
+    **Makejail**:
+
+    ```
+    OPTION container=boot args:--pull
+    OPTION overwrite=force
+    ```
+
 Access Immich at: **http://your-host:2283**
 
 ## Compose File
