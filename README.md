@@ -408,6 +408,7 @@ For detailed configuration of individual services:
 
     - **Platform:** Native FreeBSD 15.0 (no Linux emulation)
     - **Runtime:** ocijail (FreeBSD jails as OCI containers)
+    - **Note:** Requires a [patched ocijail](/guides/ocijail-patch/) for memory locking and shared memory.
     - **ML Backend:** onnxruntime with custom FreeBSD wheel
     - **Database:** PostgreSQL 14 with pgvector extension
     - **Process Manager:** s6-overlay
