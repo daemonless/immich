@@ -40,7 +40,7 @@ flowchart TD
 
 ## Prerequisites
 
-Before deploying, ensure your host environment is ready. See the [Quick Start Guide](../quick-start.md) for host setup instructions.
+Before deploying, ensure your host environment is ready. See the [Quick Start Guide](../guides/quick-start.md) for host setup instructions.
 
 **Requirements:**
 
