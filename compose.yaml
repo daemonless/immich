@@ -17,7 +17,7 @@ x-daemonless:
   title: Immich
   icon: ':simple-googlephotos:'
   category: Photos & Media
-  description: Self-hosted photo and video management solution.
+  description: High performance self-hosted photo and video management solution.
   upstream_url: https://github.com/immich-app/immich
   web_url: https://immich.app/
   type: stack
