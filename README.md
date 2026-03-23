@@ -25,6 +25,11 @@ The Immich stack consists of four containers:
 | **PostgreSQL** | `ghcr.io/daemonless/immich-postgres` | Database with pgvector extension for ML embeddings |
 | **Redis** | `ghcr.io/daemonless/redis` | Cache and job queue |
 
+!!! warning "PostgreSQL Version"
+    `immich-postgres:latest` and `:14` are both **PostgreSQL 14** — the current default, matching upstream Immich.
+    New installs can use `:18` (PostgreSQL 18). Upgrading an existing database requires a full dump/restore.
+    Upstream Immich is working on a migration path; we'll update these docs when that lands.
+
 ```mermaid
 flowchart TD
     Client[Mobile / Web Client]
@@ -36,6 +41,11 @@ flowchart TD
         Server -->|:5432| DB[immich-postgres<br/>pgvector]
         Server -->|:6379| Redis[redis<br/>cache]
     end
+
+    click Server "immich-server.md" "immich-server"
+    click ML "immich-ml.md" "immich-ml"
+    click DB "immich-postgres.md" "immich-postgres"
+    click Redis "redis.md" "redis"
 ```
 
 ## Prerequisites
@@ -49,67 +59,84 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
 - At least 4GB RAM (ML service is memory-intensive)
 - Storage for photos (plan for growth)
 
-## Quick Deploy
+## Deploy
 
-=== ":material-rocket-launch: One-Command Setup"
+=== ":material-tune: Podman Compose"
+
+    !!! warning "Requires a patched ocijail"
+        Immich needs `allow.mlock` and `allow.sysvipc` jail parameters. See the [ocijail patch guide](/guides/ocijail-patch/) before deploying.
+
+    Save as `/containers/immich/container-compose.yml`:
+
+    ```yaml
+    name: immich
+
+    services:
+      immich-server:
+        container_name: immich_server
+        image: ghcr.io/daemonless/immich-server:latest
+        network_mode: host          # All services share the host network (localhost)
+        volumes:
+          - /containers/immich/library:/data   # ← Change to your photo storage path
+          - /etc/localtime:/etc/localtime:ro
+        environment:
+          DB_HOSTNAME: localhost
+          DB_USERNAME: postgres
+          DB_DATABASE_NAME: immich
+          DB_PASSWORD: changeme     # ← Change this!
+          REDIS_HOSTNAME: localhost
+          IMMICH_MACHINE_LEARNING_URL: http://localhost:3003
+        depends_on:
+          - redis
+          - database
+          - immich-machine-learning
+        restart: always
+
+      immich-machine-learning:
+        container_name: immich_machine_learning
+        image: ghcr.io/daemonless/immich-ml:latest
+        network_mode: host
+        environment:
+          HF_HOME: /cache/huggingface  # ML models are cached here
+          MPLCONFIGDIR: /tmp
+        volumes:
+          - model-cache:/cache
+        restart: always
+
+      redis:
+        container_name: immich_redis
+        image: ghcr.io/daemonless/redis:latest
+        network_mode: host
+        volumes:
+          - /etc/localtime:/etc/localtime:ro
+          - redis-data:/config
+        restart: always
+
+      database:
+        container_name: immich_postgres
+        image: ghcr.io/daemonless/immich-postgres:14  # New installs can use :18
+        network_mode: host
+        annotations:
+          org.freebsd.jail.allow.sysvipc: "true"  # Required for PostgreSQL shared memory
+        environment:
+          POSTGRES_PASSWORD: changeme   # ← Must match DB_PASSWORD above
+          POSTGRES_USER: postgres
+          POSTGRES_DB: immich
+        volumes:
+          - /etc/localtime:/etc/localtime:ro
+          - /containers/immich/postgres:/var/lib/postgresql/data  # ← DB storage path
+        restart: always
+
+    volumes:
+      model-cache:   # ML model cache (managed by Podman)
+      redis-data:    # Redis persistence (managed by Podman)
+    ```
+
+    Then deploy:
 
     ```bash
-    # Create directory and fetch files
-    mkdir -p /containers/immich && cd /containers/immich
-    fetch https://raw.githubusercontent.com/daemonless/immich/main/container-compose.yml
-    fetch https://raw.githubusercontent.com/daemonless/immich/main/example.env -o .env
-
-    # Edit configuration
-    vi .env  # Set UPLOAD_LOCATION, DB_DATA_LOCATION, and DB_PASSWORD
-
-    # Create data directories
     mkdir -p /containers/immich/library /containers/immich/postgres
     chown -R 1000:1000 /containers/immich/library /containers/immich/postgres
-
-    # Start the stack
-    podman-compose up -d
-    ```
-
-=== ":material-file-document: Manual Setup"
-
-    **Step 1: Create directories**
-    ```bash
-    mkdir -p /containers/immich
-    cd /containers/immich
-    ```
-
-    **Step 2: Download compose file**
-    ```bash
-    fetch https://raw.githubusercontent.com/daemonless/immich/main/container-compose.yml
-    ```
-
-    **Step 3: Create environment file**
-    ```bash
-    cat > .env << 'EOF'
-    # Storage locations
-    UPLOAD_LOCATION=/containers/immich/library
-    DB_DATA_LOCATION=/containers/immich/postgres
-
-    # Database credentials (change the password!)
-    DB_PASSWORD=your_secure_password_here
-    DB_USERNAME=postgres
-    DB_DATABASE_NAME=immich
-
-    # Timezone (optional)
-    TZ=America/Los_Angeles
-    EOF
-    ```
-
-    **Step 4: Create data directories**
-    ```bash
-    mkdir -p /containers/immich/library
-    mkdir -p /containers/immich/postgres
-    chown -R 1000:1000 /containers/immich/library
-    chown -R 1000:1000 /containers/immich/postgres
-    ```
-
-    **Step 5: Start the stack**
-    ```bash
     podman-compose up -d
     ```
 
@@ -216,75 +243,6 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
     ```
 
 Access Immich at: **http://your-host:2283**
-
-## Compose File
-
-The complete `container-compose.yml` for reference:
-
-```yaml
-name: immich
-
-services:
-  immich-server:
-    container_name: immich_server
-    image: ghcr.io/daemonless/immich-server:latest
-    network_mode: host
-    volumes:
-      - ${UPLOAD_LOCATION}:/data
-      - /etc/localtime:/etc/localtime:ro
-    environment:
-      DB_HOSTNAME: localhost
-      REDIS_HOSTNAME: localhost
-      IMMICH_MACHINE_LEARNING_URL: http://localhost:3003
-    env_file:
-      - .env
-    depends_on:
-      - redis
-      - database
-      - immich-machine-learning
-    restart: always
-
-  immich-machine-learning:
-    container_name: immich_machine_learning
-    image: ghcr.io/daemonless/immich-ml:latest
-    network_mode: host
-    environment:
-      HF_HOME: /cache/huggingface
-      MPLCONFIGDIR: /tmp
-    volumes:
-      - model-cache:/cache
-    env_file:
-      - .env
-    restart: always
-
-  redis:
-    container_name: immich_redis
-    image: ghcr.io/daemonless/redis:latest
-    network_mode: host
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - redis-data:/config
-    restart: always
-
-  database:
-    container_name: immich_postgres
-    image: ghcr.io/daemonless/immich-postgres:latest
-    network_mode: host
-    annotations:
-      org.freebsd.jail.allow.sysvipc: "true"  # Required for PostgreSQL
-    environment:
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_USER: ${DB_USERNAME}
-      POSTGRES_DB: ${DB_DATABASE_NAME}
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - ${DB_DATA_LOCATION}:/var/lib/postgresql/data
-    restart: always
-
-volumes:
-  model-cache:
-  redis-data:
-```
 
 ## Environment Variables
 
@@ -408,7 +366,6 @@ For detailed configuration of individual services:
 
     - **Platform:** Native FreeBSD 15.0 (no Linux emulation)
     - **Runtime:** ocijail (FreeBSD jails as OCI containers)
-    - **Note:** Requires a [patched ocijail](/guides/ocijail-patch/) for memory locking and shared memory.
     - **ML Backend:** onnxruntime with custom FreeBSD wheel
     - **Database:** PostgreSQL 14 with pgvector extension
     - **Process Manager:** s6-overlay
