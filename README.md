@@ -66,7 +66,28 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
     !!! warning "Requires a patched ocijail"
         Immich needs `allow.mlock` and `allow.sysvipc` jail parameters. See the [ocijail patch guide](/guides/ocijail-patch/) before deploying.
 
-    Save as `/containers/immich/container-compose.yml`:
+    **1.** Save as `.env`:
+
+    ```env
+    # The location where your uploaded files are stored
+    UPLOAD_LOCATION=./library
+
+    # The location where your database files are stored
+    DB_DATA_LOCATION=./postgres
+
+    # To set a timezone, uncomment and change Etc/UTC to a TZ identifier
+    # TZ=Etc/UTC
+
+    # Change to a random password (A-Za-z0-9 only)
+    DB_PASSWORD=postgres
+
+    # The values below do not need to be changed
+    ###################################################################################
+    DB_USERNAME=postgres
+    DB_DATABASE_NAME=immich
+    ```
+
+    **2.** Save as `compose.yaml`:
 
     ```yaml
     name: immich
@@ -75,17 +96,16 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
       immich-server:
         container_name: immich_server
         image: ghcr.io/daemonless/immich-server:latest
-        network_mode: host          # All services share the host network (localhost)
+        network_mode: host
         volumes:
-          - /containers/immich/library:/data   # ← Change to your photo storage path
+          - ${UPLOAD_LOCATION}:/data
           - /etc/localtime:/etc/localtime:ro
         environment:
           DB_HOSTNAME: localhost
-          DB_USERNAME: postgres
-          DB_DATABASE_NAME: immich
-          DB_PASSWORD: changeme     # ← Change this!
           REDIS_HOSTNAME: localhost
           IMMICH_MACHINE_LEARNING_URL: http://localhost:3003
+        env_file:
+          - .env
         depends_on:
           - redis
           - database
@@ -101,6 +121,8 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
           MPLCONFIGDIR: /tmp
         volumes:
           - model-cache:/cache
+        env_file:
+          - .env
         restart: always
 
       redis:
@@ -117,26 +139,26 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
         image: ghcr.io/daemonless/immich-postgres:14  # New installs can use :18
         network_mode: host
         annotations:
-          org.freebsd.jail.allow.sysvipc: "true"  # Required for PostgreSQL shared memory
+          org.freebsd.jail.allow.sysvipc: "true"
         environment:
-          POSTGRES_PASSWORD: changeme   # ← Must match DB_PASSWORD above
-          POSTGRES_USER: postgres
-          POSTGRES_DB: immich
+          POSTGRES_PASSWORD: ${DB_PASSWORD}
+          POSTGRES_USER: ${DB_USERNAME}
+          POSTGRES_DB: ${DB_DATABASE_NAME}
         volumes:
           - /etc/localtime:/etc/localtime:ro
-          - /containers/immich/postgres:/var/lib/postgresql/data  # ← DB storage path
+          - ${DB_DATA_LOCATION}:/var/lib/postgresql/data
         restart: always
 
     volumes:
-      model-cache:   # ML model cache (managed by Podman)
-      redis-data:    # Redis persistence (managed by Podman)
+      model-cache:
+      redis-data:
     ```
 
-    Then deploy:
+    **3.** Deploy:
 
     ```bash
-    mkdir -p /containers/immich/library /containers/immich/postgres
-    chown -R 1000:1000 /containers/immich/library /containers/immich/postgres
+    mkdir -p library postgres
+    chown -R 1000:1000 library postgres
     podman-compose up -d
     ```
 
