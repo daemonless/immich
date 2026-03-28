@@ -1,12 +1,8 @@
 #
 # Immich for FreeBSD (Daemonless) - Bridge Networking
 #
-# Requires cni-dnsname for container DNS resolution.
-# See: https://github.com/daemonless/freebsd-ports
-#
 # Prerequisites:
 #   pkg install podman-suite py311-podman-compose
-#   # Install cni-dnsname from daemonless/freebsd-ports
 #
 # Usage:
 #   1. Create .env file (see README.md)
