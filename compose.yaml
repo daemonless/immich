@@ -22,7 +22,7 @@ x-daemonless:
   web_url: https://immich.app/
   type: stack
 
-  appjail: true
+  appjail:
     director:
       options:
         - alias:
