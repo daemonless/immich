@@ -70,7 +70,7 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
 
     **1.** Save as `.env`:
 
-    ```env
+    ```env { data-zip-bundle="immich-podman" data-zip-filename=".env" }
     # The location where your uploaded files are stored
     UPLOAD_LOCATION=./library
 
@@ -91,7 +91,7 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
 
     **2.** Save as `compose.yaml`:
 
-    ```yaml
+    ```yaml { data-zip-bundle="immich-podman" data-zip-filename="compose.yaml" }
     name: immich
 
     services:
@@ -168,7 +168,7 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
 
     **.env**:
 
-    ```
+    ``` { data-zip-bundle="immich-appjail" data-zip-filename=".env" }
     UPLOAD_LOCATION=/var/appjail-volumes/immich/library
     DB_DATA_LOCATION=/var/appjail-volumes/immich/postgres
     CACHE_LOCATION=/var/appjail-volumes/immich/cache
@@ -182,7 +182,7 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
 
     **appjail-director.yml**:
 
-    ```yaml
+    ```yaml { data-zip-bundle="immich-appjail" data-zip-filename="appjail-director.yml" }
     options:
       # Equivalent to 'network_mode: host'
       - alias:
@@ -249,7 +249,7 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
 
     **immich-postgres-template.conf**:
 
-    ```
+    ``` { data-zip-bundle="immich-appjail" data-zip-filename="immich-postgres-template.conf" }
     exec.start: "/bin/sh /etc/rc"
     exec.stop: "/bin/sh /etc/rc.shutdown jail"
     sysvmsg: new
@@ -261,7 +261,7 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
 
     **Makejail**:
 
-    ```
+    ``` { data-zip-bundle="immich-appjail" data-zip-filename="Makejail" }
     OPTION container=boot args:--pull
     OPTION overwrite=force
     ```
