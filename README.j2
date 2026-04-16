@@ -3,7 +3,7 @@ title: "Immich Stack on FreeBSD: Native Photo Management using Podman & Jails"
 description: "Deploy the complete Immich photo management stack on FreeBSD natively using Podman and Daemonless. Self-hosted Google Photos alternative with facial recognition and machine learning."
 ---
 
-# :simple-googlephotos: Immich Stack
+# {{ icon }} Immich Stack
 
 [![Build Status](https://img.shields.io/github/actions/workflow/status/daemonless/immich-server/build.yaml?style=flat-square&label=Server&color=green)](https://github.com/daemonless/immich-server/actions)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/daemonless/immich-ml/build.yaml?style=flat-square&label=ML&color=green)](https://github.com/daemonless/immich-ml/actions)
@@ -22,10 +22,10 @@ The Immich stack consists of four containers:
 
 | Service | Image | Description |
 |---------|-------|-------------|
-| **Server** | `ghcr.io/daemonless/immich-server` | Main application server (Node.js) - Web UI and API |
-| **Machine Learning** | `ghcr.io/daemonless/immich-ml` | Python/ONNX service for facial recognition and smart search |
-| **PostgreSQL** | `ghcr.io/daemonless/immich-postgres` | Database with pgvector extension for ML embeddings |
-| **Redis** | `ghcr.io/daemonless/redis` | Cache and job queue |
+| **Server** | `{{ registry }}/immich-server` | Main application server (Node.js) - Web UI and API |
+| **Machine Learning** | `{{ registry }}/immich-ml` | Python/ONNX service for facial recognition and smart search |
+| **PostgreSQL** | `{{ registry }}/immich-postgres` | Database with pgvector extension for ML embeddings |
+| **Redis** | `{{ registry }}/redis` | Cache and job queue |
 
 !!! warning "PostgreSQL Version"
     `immich-postgres:latest` and `:14` are both **PostgreSQL 14** — the current default, matching upstream Immich.
@@ -97,7 +97,7 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
     services:
       immich-server:
         container_name: immich_server
-        image: ghcr.io/daemonless/immich-server:latest
+        image: {{ registry }}/immich-server:latest
         network_mode: host
         volumes:
           - ${UPLOAD_LOCATION}:/data
@@ -116,7 +116,7 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
 
       immich-machine-learning:
         container_name: immich_machine_learning
-        image: ghcr.io/daemonless/immich-ml:latest
+        image: {{ registry }}/immich-ml:latest
         network_mode: host
         environment:
           HF_HOME: /cache/huggingface  # ML models are cached here
@@ -129,7 +129,7 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
 
       redis:
         container_name: immich_redis
-        image: ghcr.io/daemonless/redis:latest
+        image: {{ registry }}/redis:latest
         network_mode: host
         volumes:
           - /etc/localtime:/etc/localtime:ro
@@ -138,7 +138,7 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
 
       database:
         container_name: immich_postgres
-        image: ghcr.io/daemonless/immich-postgres:14  # New installs can use :18
+        image: {{ registry }}/immich-postgres:14  # New installs can use :18
         network_mode: host
         annotations:
           org.freebsd.jail.allow.sysvipc: "true"
@@ -192,7 +192,7 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
         name: immich_server
         priority: 100
         options:
-          - from: ghcr.io/daemonless/immich-server:latest
+          - from: {{ registry }}/immich-server:latest
         volumes:
           - immich-data: /data
         oci:
@@ -204,7 +204,7 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
       immich-machine-learning:
         name: immich_machine_learning
         options:
-          - from: ghcr.io/daemonless/immich-ml:latest
+          - from: {{ registry }}/immich-ml:latest
         oci:
           environment:
             - HF_HOME: /cache/huggingface
@@ -215,7 +215,7 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
       redis:
         name: immich_redis
         options:
-          - from: ghcr.io/daemonless/redis:latest
+          - from: {{ registry }}/redis:latest
         oci:
           environment:
             - LANG: C.UTF-8
@@ -225,7 +225,7 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
       database:
         name: immich_postgres
         options:
-          - from: ghcr.io/daemonless/immich-postgres:latest
+          - from: {{ registry }}/immich-postgres:latest
           - template: !ENV '${PWD}/immich-postgres-template.conf'
         oci:
           environment:
