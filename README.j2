@@ -160,7 +160,7 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
 
     ```bash
     mkdir -p library postgres
-    chown -R 1000:1000 library postgres
+    chown -R ${PUID:-1000}:${PGID:-1000} library postgres
     podman-compose up -d
     ```
 
@@ -237,8 +237,6 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
     volumes:
       immich-data:
         device: !ENV '${UPLOAD_LOCATION}'
-        owner: 1000
-        group: 1000
       model-cache:
         device: !ENV '${CACHE_LOCATION}'
       redis-data:

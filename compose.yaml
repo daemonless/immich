@@ -77,8 +77,6 @@ x-daemonless:
       volumes:
         immich-data:
           device: "!ENV '${UPLOAD_LOCATION}'"
-          owner: 1000
-          group: 1000
         model-cache:
           device: "!ENV '${CACHE_LOCATION}'"
         redis-data:
