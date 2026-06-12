@@ -166,7 +166,7 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
 
 === ":appjail-appjail: AppJail Director"
 
-    **.env**:
+    **1.** Save as `.env`:
 
     ``` { data-zip-bundle="immich-appjail" data-zip-filename=".env" }
     UPLOAD_LOCATION=/var/appjail-volumes/immich/library
@@ -180,7 +180,7 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
     DIRECTOR_PROJECT=immich
     ```
 
-    **appjail-director.yml**:
+    **2.** Save as `appjail-director.yml`:
 
     ```yaml { data-zip-bundle="immich-appjail" data-zip-filename="appjail-director.yml" }
     options:
@@ -198,6 +198,8 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
         oci:
           environment:
             - DB_HOSTNAME: 127.0.0.1
+            - DB_USERNAME: !ENV '${DB_USERNAME}'
+            - DB_PASSWORD: !ENV '${DB_PASSWORD}'
             - REDIS_HOSTNAME: 127.0.0.1
             - IMMICH_MACHINE_LEARNING_URL: http://127.0.0.1:3003
             - TZ: !ENV '${TZ}'
@@ -245,7 +247,7 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
         device: !ENV '${DB_DATA_LOCATION}'
     ```
 
-    **immich-postgres-template.conf**:
+    **3.** Save as `immich-postgres-template.conf`:
 
     ``` { data-zip-bundle="immich-appjail" data-zip-filename="immich-postgres-template.conf" }
     exec.start: "/bin/sh /etc/rc"
@@ -257,11 +259,20 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
     persist
     ```
 
-    **Makejail**:
+    **4.** Save as `Makejail`:
 
     ``` { data-zip-bundle="immich-appjail" data-zip-filename="Makejail" }
     OPTION container=boot args:--pull
     OPTION overwrite=force
+    ```
+
+    **5.** Create the volume directories and deploy:
+
+    ```bash
+    mkdir -p /var/appjail-volumes/immich/library /var/appjail-volumes/immich/postgres \
+             /var/appjail-volumes/immich/cache /var/appjail-volumes/immich/redis
+    chown -R 1000:1000 /var/appjail-volumes/immich
+    appjail-director up
     ```
 
 Access Immich at: **http://your-host:2283**

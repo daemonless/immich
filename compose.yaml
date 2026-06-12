@@ -38,6 +38,8 @@ x-daemonless:
           oci:
             environment:
               - DB_HOSTNAME: 127.0.0.1
+              - DB_USERNAME: "!ENV '${DB_USERNAME}'"
+              - DB_PASSWORD: "!ENV '${DB_PASSWORD}'"
               - REDIS_HOSTNAME: 127.0.0.1
               - IMMICH_MACHINE_LEARNING_URL: http://127.0.0.1:3003
               - TZ: "!ENV '${TZ}'"

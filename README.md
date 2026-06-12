@@ -266,11 +266,12 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
     OPTION overwrite=force
     ```
 
-    **5.** Deploy:
+    **5.** Create the volume directories and deploy:
 
     ```bash
-    mkdir -p library postgres
-    chown -R 1000:1000 library postgres
+    mkdir -p /var/appjail-volumes/immich/library /var/appjail-volumes/immich/postgres \
+             /var/appjail-volumes/immich/cache /var/appjail-volumes/immich/redis
+    chown -R 1000:1000 /var/appjail-volumes/immich
     appjail-director up
     ```
 
