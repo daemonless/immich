@@ -103,7 +103,7 @@ x-daemonless:
 services:
   immich-server:
     container_name: immich_server
-    image: ghcr.io/daemonless/immich-server:latest
+    image: ghcr.io/daemonless/immich-server:${IMMICH_TAG:-latest}
     network_mode: host
     volumes:
       - ${UPLOAD_LOCATION}:/data
@@ -122,7 +122,7 @@ services:
 
   immich-machine-learning:
     container_name: immich_machine_learning
-    image: ghcr.io/daemonless/immich-ml:latest
+    image: ghcr.io/daemonless/immich-ml:${IMMICH_TAG:-latest}
     network_mode: host
     environment:
       HF_HOME: /cache/huggingface
