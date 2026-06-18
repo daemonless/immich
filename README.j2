@@ -50,6 +50,15 @@ flowchart TD
     click Redis "redis.md" "redis"
 ```
 
+## Version Tags
+
+These tags apply to the `immich-server` image (set via `IMMICH_TAG`):
+
+| Tag | Description | Best For |
+| :--- | :--- | :--- |
+| `latest` | Current stable release, built from the latest upstream Immich release. | Most users. |
+| `beta` | Beta release built from upstream v3.0.0-rc.0. | Testing upcoming releases early. |
+
 ## Prerequisites
 
 Before deploying, ensure your host environment is ready. See the [Quick Start Guide](../guides/quick-start.md) for host setup instructions.
