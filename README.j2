@@ -202,6 +202,7 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
         priority: 100
         options:
           - from: {{ registry }}/immich-server:latest
+          - container: 'boot args:--pull'
         volumes:
           - immich-data: /data
         oci:
@@ -216,6 +217,7 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
         name: immich_machine_learning
         options:
           - from: {{ registry }}/immich-ml:latest
+          - container: 'boot args:--pull'
         oci:
           environment:
             - HF_HOME: /cache/huggingface
@@ -227,6 +229,7 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
         name: immich_redis
         options:
           - from: {{ registry }}/redis:latest
+          - container: 'boot args:--pull'
         oci:
           environment:
             - LANG: C.UTF-8
@@ -238,6 +241,7 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
         options:
           - from: {{ registry }}/immich-postgres:latest
           - template: !ENV '${PWD}/immich-postgres-template.conf'
+          - container: 'boot args:--pull'
         oci:
           environment:
             - POSTGRES_PASSWORD: !ENV '${DB_PASSWORD}'
