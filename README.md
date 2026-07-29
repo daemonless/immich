@@ -11,7 +11,7 @@ description: "Deploy the complete Immich photo management stack on FreeBSD nativ
 
 Self-hosted photo and video management solution with facial recognition, object detection, and smart search - running natively on FreeBSD.
 
-![](.daemonless/screenshots/screenshot_hu_27e3b673de9529e2_1.webp)
+![](/images/screenshots/immich/screenshot_hu_27e3b673de9529e2_1.webp)
 
 !!! tip "What is Immich?"
     Immich is a high-performance, self-hosted alternative to Google Photos. It provides automatic backup from mobile devices, facial recognition, object detection, location-based browsing, and a modern web interface. The Daemonless stack runs entirely on native FreeBSD - no Linux emulation required.
@@ -58,6 +58,15 @@ These tags apply to the `immich-server` image (set via `IMMICH_TAG`):
 | :--- | :--- | :--- |
 | `latest` | Current stable release, built from the latest upstream Immich release. | Most users. |
 | `beta` | Beta release built from upstream v3.0.0-rc.0. | Testing upcoming releases early. |
+
+### Machine Learning Tags (`immich-ml`)
+
+Set via `IMMICH_ML_TAG` in `.env`:
+
+| Tag | Description | Best For |
+| :--- | :--- | :--- |
+| `latest` | Current stable release with AVX SIMD optimizations. | CPUs with AVX/AVX2 support. |
+| `no-avx` | Release built with ONNX Runtime compiled without AVX instructions. | Older x86-64 CPUs without AVX support (e.g. AMD Turion II, Nehalem/Core2). |
 
 ## Prerequisites
 

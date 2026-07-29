@@ -94,6 +94,7 @@ x-daemonless:
       DB_PASSWORD: PostgreSQL database password
       DB_USERNAME: PostgreSQL username
       DB_DATABASE_NAME: PostgreSQL database name
+      IMMICH_ML_TAG: Machine learning image tag (defaults to 'latest'. Set to 'no-avx' for CPUs without AVX)
       TZ: Timezone
     volumes:
       /data: Media storage (mapped to UPLOAD_LOCATION)
@@ -122,7 +123,7 @@ services:
 
   immich-machine-learning:
     container_name: immich_machine_learning
-    image: ghcr.io/daemonless/immich-ml:${IMMICH_TAG:-latest}
+    image: ghcr.io/daemonless/immich-ml:${IMMICH_ML_TAG:-${IMMICH_TAG:-latest}}
     network_mode: host
     environment:
       HF_HOME: /cache/huggingface
