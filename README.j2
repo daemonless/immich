@@ -121,9 +121,10 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
           - ${UPLOAD_LOCATION}:/data
           - /etc/localtime:/etc/localtime:ro
         environment:
-          DB_HOSTNAME: localhost
-          REDIS_HOSTNAME: localhost
-          IMMICH_MACHINE_LEARNING_URL: http://localhost:3003
+          DB_HOSTNAME: ${DB_HOSTNAME:-localhost}
+          REDIS_HOSTNAME: ${REDIS_HOSTNAME:-localhost}
+          IMMICH_MACHINE_LEARNING_URL: http://${IMMICH_ML_HOST:-localhost}:3003
+          IMMICH_HOST: ${IMMICH_HOST:-0.0.0.0}
         env_file:
           - .env
         depends_on:
@@ -211,22 +212,23 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
         priority: 100
         options:
           - from: {{ registry }}/immich-server:latest
-          - container: 'boot args:--pull'
+          - container: 'boot args:--pull=newer'
         volumes:
           - immich-data: /data
         oci:
           environment:
-            - DB_HOSTNAME: 127.0.0.1
+            - DB_HOSTNAME: !ENV '${DB_HOSTNAME:127.0.0.1}'
             - DB_USERNAME: !ENV '${DB_USERNAME}'
             - DB_PASSWORD: !ENV '${DB_PASSWORD}'
-            - REDIS_HOSTNAME: 127.0.0.1
-            - IMMICH_MACHINE_LEARNING_URL: http://127.0.0.1:3003
+            - REDIS_HOSTNAME: !ENV '${REDIS_HOSTNAME:127.0.0.1}'
+            - IMMICH_MACHINE_LEARNING_URL: !ENV 'http://${IMMICH_ML_HOST:127.0.0.1}:3003'
+            - IMMICH_HOST: !ENV '${IMMICH_HOST:0.0.0.0}'
             - TZ: !ENV '${TZ}'
       immich-machine-learning:
         name: immich_machine_learning
         options:
           - from: {{ registry }}/immich-ml:latest
-          - container: 'boot args:--pull'
+          - container: 'boot args:--pull=newer'
         oci:
           environment:
             - HF_HOME: /cache/huggingface
@@ -238,7 +240,7 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
         name: immich_redis
         options:
           - from: {{ registry }}/redis:latest
-          - container: 'boot args:--pull'
+          - container: 'boot args:--pull=newer'
         oci:
           environment:
             - LANG: C.UTF-8
@@ -250,7 +252,7 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
         options:
           - from: {{ registry }}/immich-postgres:latest
           - template: !ENV '${PWD}/immich-postgres-template.conf'
-          - container: 'boot args:--pull'
+          - container: 'boot args:--pull=newer'
         oci:
           environment:
             - POSTGRES_PASSWORD: !ENV '${DB_PASSWORD}'
@@ -271,14 +273,12 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
 
     **3.** Save as `immich-postgres-template.conf`:
 
+    {# Included, not copied: this is the same file the AppJail bundle ships, so
+       the by-hand instructions cannot drift from what fjord installs. The
+       hardcoded copy that used to live here had lost ip4/ip6: inherit, which
+       leaves PostgreSQL in a jail that cannot bind. -#}
     ``` { data-zip-bundle="immich-appjail" data-zip-filename="immich-postgres-template.conf" }
-    exec.start: "/bin/sh /etc/rc"
-    exec.stop: "/bin/sh /etc/rc.shutdown jail"
-    sysvmsg: new
-    sysvsem: new
-    sysvshm: new
-    mount.devfs
-    persist
+{% filter indent(4, True) %}{% include "immich-postgres-template.conf" %}{% endfilter %}
     ```
 
     **4.** Save as `Makejail`:

@@ -44,9 +44,13 @@ services:
       - ${UPLOAD_LOCATION}:/data
       - /etc/localtime:/etc/localtime:ro
     environment:
-      DB_HOSTNAME: localhost
-      REDIS_HOSTNAME: localhost
-      IMMICH_MACHINE_LEARNING_URL: http://localhost:3003
+      DB_HOSTNAME: ${DB_HOSTNAME:-localhost}
+      REDIS_HOSTNAME: ${REDIS_HOSTNAME:-localhost}
+      IMMICH_MACHINE_LEARNING_URL: http://${IMMICH_ML_HOST:-localhost}:3003
+      # Immich binds loopback unless told otherwise, so it answers nothing on
+      # the host's address -- or on a published port, which forwards to the
+      # container's own and not to its loopback.
+      IMMICH_HOST: ${IMMICH_HOST:-0.0.0.0}
     env_file:
       - .env
     depends_on:

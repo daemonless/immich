@@ -18,6 +18,10 @@ services:
     volumes:
       - ${UPLOAD_LOCATION}:/data
       - /etc/localtime:/etc/localtime:ro
+    environment:
+      # A published port forwards to the container's own address, not to its
+      # loopback, so an app that binds loopback answers nothing through it.
+      IMMICH_HOST: ${IMMICH_HOST:-0.0.0.0}
     env_file:
       - .env
     ports:

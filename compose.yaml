@@ -22,7 +22,34 @@ x-daemonless:
   web_url: https://immich.app/
   type: stack
 
+  # Which service goes where when this stack is put on a network. The server
+  # is the one people open; its database, cache and ML are not, and putting
+  # them on the LAN because the app was put there is how a postgres ends up
+  # reachable from the rest of the house.
+  networking:
+    immich-server: default
+    "*": private
+
+  # How each part is FOUND once they are not all sharing one network stack.
+  # The stack ships addressed over localhost, which is right only while every
+  # service is on the host; put on a network, each gets its own address and
+  # localhost stops meaning anything. Service name -> the variable its
+  # consumers read, which fjord sets to that service's name. Container DNS
+  # then resolves it on whatever segment they share, so there is no address to
+  # allocate or write back.
+  hostnames:
+    database: DB_HOSTNAME
+    redis: REDIS_HOSTNAME
+    immich-machine-learning: IMMICH_ML_HOST
+
   appjail:
+    # The database's jail template ships with the bundle: director references it
+    # as ${PWD}/immich-postgres-template.conf, and declaring it here is what
+    # puts it next to director.yml for a consumer that deploys the bundle
+    # rather than following the README by hand.
+    depends_on:
+      - name: database
+        template: immich-postgres-template.conf
     director:
       options:
         - alias:
@@ -32,20 +59,34 @@ x-daemonless:
           name: immich_server
           priority: 100
           options:
+            # Recreating a jail rebuilds it from whatever copy of the image is
+            # already in the store, so without this an update is a no-op and the
+            # service stays on the version it was installed with. newer rather
+            # than a bare --pull (which means always): always refuses to start
+            # at all when the registry is unreachable.
+            - container: 'boot args:--pull=newer'
             - from: ghcr.io/daemonless/immich-server:latest
           volumes:
             - immich-data: /data
           oci:
             environment:
-              - DB_HOSTNAME: 127.0.0.1
+              # Addresses, not 127.0.0.1: that is only true while every jail
+              # shares the host's network stack. Put the database on a private
+              # segment and the server has to be told where it went. The
+              # default keeps host networking working with nothing set.
+              - DB_HOSTNAME: "!ENV '${DB_HOSTNAME:127.0.0.1}'"
               - DB_USERNAME: "!ENV '${DB_USERNAME}'"
               - DB_PASSWORD: "!ENV '${DB_PASSWORD}'"
-              - REDIS_HOSTNAME: 127.0.0.1
-              - IMMICH_MACHINE_LEARNING_URL: http://127.0.0.1:3003
+              - REDIS_HOSTNAME: "!ENV '${REDIS_HOSTNAME:127.0.0.1}'"
+              - IMMICH_MACHINE_LEARNING_URL: "!ENV 'http://${IMMICH_ML_HOST:127.0.0.1}:3003'"
+              # Immich binds loopback unless told otherwise, so a jail with an
+              # address of its own answers on none of it.
+              - IMMICH_HOST: "!ENV '${IMMICH_HOST:0.0.0.0}'"
               - TZ: "!ENV '${TZ}'"
         immich-machine-learning:
           name: immich_machine_learning
           options:
+            - container: 'boot args:--pull=newer'
             - from: ghcr.io/daemonless/immich-ml:latest
           oci:
             environment:
@@ -57,6 +98,7 @@ x-daemonless:
         redis:
           name: immich_redis
           options:
+            - container: 'boot args:--pull=newer'
             - from: ghcr.io/daemonless/redis:latest
           oci:
             environment:
@@ -67,6 +109,7 @@ x-daemonless:
         database:
           name: immich_postgres
           options:
+            - container: 'boot args:--pull=newer'
             - from: ghcr.io/daemonless/immich-postgres:latest
             - template: "!ENV '${PWD}/immich-postgres-template.conf'"
           oci:
@@ -110,9 +153,13 @@ services:
       - ${UPLOAD_LOCATION}:/data
       - /etc/localtime:/etc/localtime:ro
     environment:
-      DB_HOSTNAME: localhost
-      REDIS_HOSTNAME: localhost
-      IMMICH_MACHINE_LEARNING_URL: http://localhost:3003
+      DB_HOSTNAME: ${DB_HOSTNAME:-localhost}
+      REDIS_HOSTNAME: ${REDIS_HOSTNAME:-localhost}
+      IMMICH_MACHINE_LEARNING_URL: http://${IMMICH_ML_HOST:-localhost}:3003
+      # Immich binds loopback unless told otherwise, so it answers nothing on
+      # the host's address -- or on a published port, which forwards to the
+      # container's own and not to its loopback.
+      IMMICH_HOST: ${IMMICH_HOST:-0.0.0.0}
     env_file:
       - .env
     depends_on:

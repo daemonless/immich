@@ -121,9 +121,10 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
           - ${UPLOAD_LOCATION}:/data
           - /etc/localtime:/etc/localtime:ro
         environment:
-          DB_HOSTNAME: localhost
-          REDIS_HOSTNAME: localhost
-          IMMICH_MACHINE_LEARNING_URL: http://localhost:3003
+          DB_HOSTNAME: ${DB_HOSTNAME:-localhost}
+          REDIS_HOSTNAME: ${REDIS_HOSTNAME:-localhost}
+          IMMICH_MACHINE_LEARNING_URL: http://${IMMICH_ML_HOST:-localhost}:3003
+          IMMICH_HOST: ${IMMICH_HOST:-0.0.0.0}
         env_file:
           - .env
         depends_on:
@@ -211,20 +212,23 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
         priority: 100
         options:
           - from: ghcr.io/daemonless/immich-server:latest
+          - container: 'boot args:--pull=newer'
         volumes:
           - immich-data: /data
         oci:
           environment:
-            - DB_HOSTNAME: 127.0.0.1
+            - DB_HOSTNAME: !ENV '${DB_HOSTNAME:127.0.0.1}'
             - DB_USERNAME: !ENV '${DB_USERNAME}'
             - DB_PASSWORD: !ENV '${DB_PASSWORD}'
-            - REDIS_HOSTNAME: 127.0.0.1
-            - IMMICH_MACHINE_LEARNING_URL: http://127.0.0.1:3003
+            - REDIS_HOSTNAME: !ENV '${REDIS_HOSTNAME:127.0.0.1}'
+            - IMMICH_MACHINE_LEARNING_URL: !ENV 'http://${IMMICH_ML_HOST:127.0.0.1}:3003'
+            - IMMICH_HOST: !ENV '${IMMICH_HOST:0.0.0.0}'
             - TZ: !ENV '${TZ}'
       immich-machine-learning:
         name: immich_machine_learning
         options:
           - from: ghcr.io/daemonless/immich-ml:latest
+          - container: 'boot args:--pull=newer'
         oci:
           environment:
             - HF_HOME: /cache/huggingface
@@ -236,6 +240,7 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
         name: immich_redis
         options:
           - from: ghcr.io/daemonless/redis:latest
+          - container: 'boot args:--pull=newer'
         oci:
           environment:
             - LANG: C.UTF-8
@@ -247,6 +252,7 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
         options:
           - from: ghcr.io/daemonless/immich-postgres:latest
           - template: !ENV '${PWD}/immich-postgres-template.conf'
+          - container: 'boot args:--pull=newer'
         oci:
           environment:
             - POSTGRES_PASSWORD: !ENV '${DB_PASSWORD}'
@@ -268,6 +274,16 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
     **3.** Save as `immich-postgres-template.conf`:
 
     ``` { data-zip-bundle="immich-appjail" data-zip-filename="immich-postgres-template.conf" }
+    # The jail PostgreSQL runs in.
+    #
+    # PostgreSQL wants SysV shared memory, which a jail does not get by default --
+    # without these three it fails to start with a shared memory error that reads
+    # like a configuration problem.
+    #
+    # ip4/ip6 are set here rather than left to the director's ip4_inherit option:
+    # that option is a no-op in AppJail 5.5.0, and a jail with ip4 disabled cannot
+    # bind, so the database comes up answering nothing.
+
     exec.start: "/bin/sh /etc/rc"
     exec.stop: "/bin/sh /etc/rc.shutdown jail"
     sysvmsg: new
@@ -275,6 +291,8 @@ Before deploying, ensure your host environment is ready. See the [Quick Start Gu
     sysvshm: new
     mount.devfs
     persist
+    ip4: inherit
+    ip6: inherit
     ```
 
     **4.** Save as `Makejail`:
