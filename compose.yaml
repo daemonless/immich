@@ -95,6 +95,18 @@ x-daemonless:
               - TZ: "!ENV '${TZ}'"
           volumes:
             - model-cache: /cache
+        immich-public-proxy:
+          name: immich_public_proxy
+          priority: 110
+          options:
+            - container: 'boot args:--pull=newer'
+            - from: ghcr.io/daemonless/immich-public-proxy:latest
+          oci:
+            environment:
+              - IMMICH_URL: "http://127.0.0.1:2283"
+              - PUBLIC_BASE_URL: "!ENV '${PUBLIC_BASE_URL}'"
+              - IPP_PORT: "3000"
+              - TZ: "!ENV '${TZ}'"
         redis:
           name: immich_redis
           options:
@@ -129,8 +141,40 @@ x-daemonless:
         db-data:
           device: "!ENV '${DB_DATA_LOCATION}'"
 
+  # What the stack can run with or without. The default is the compose as
+  # it stands: server, machine learning, redis and postgres.
+  choices:
+    machine_learning:
+      label: Machine learning
+      doc: Faces, objects and smart search. Needs 2 GB of RAM and downloads about 1 GB of models on first run.
+      default: "on"
+      options:
+        "on":
+          label: "With machine learning"
+        "off":
+          label: "Without machine learning"
+          doc: The server runs without it; search is by name and date only.
+          drop: [immich-machine-learning]
+          env: { IMMICH_ML_ENABLED: "false" }
+    public_proxy:
+      label: Public sharing
+      doc: Share albums with people who have no account, without exposing Immich itself.
+      default: "off"
+      options:
+        "off":
+          label: "No public sharing"
+        "on":
+          label: "With public sharing"
+          doc: immich-public-proxy answers on 3000 and talks to the server over localhost; put it behind your reverse proxy.
+          profile: proxy
+
   docs:
-    manual: true
+    services:
+      immich-server: "Web UI and API"
+      immich-machine-learning: "Faces, objects and smart search (ONNX, CPU)"
+      immich-public-proxy: "Public links to albums, without exposing the server"
+      redis: "Cache and job queue"
+      database: "PostgreSQL with pgvector, for the ML embeddings"
     env:
       UPLOAD_LOCATION: Path to store uploaded media
       DB_DATA_LOCATION: Path to store database files
@@ -138,11 +182,64 @@ x-daemonless:
       DB_USERNAME: PostgreSQL username
       DB_DATABASE_NAME: PostgreSQL database name
       IMMICH_ML_TAG: Machine learning image tag (defaults to 'latest')
+      IMMICH_ML_ENABLED: "false turns machine learning off (set by the choice)"
+      PUBLIC_BASE_URL:
+        desc: "Address the public proxy is reached at, no trailing slash (optional; it uses the request's host otherwise)"
+        optional: true
       TZ: Timezone
     volumes:
       /data: Media storage (mapped to UPLOAD_LOCATION)
     ports:
       2283: Web UI
+      3000: Public proxy (with the Public sharing choice)
+
+  readme:
+    version_tags: |-
+      These tags apply to the `immich-server` image (set via `IMMICH_TAG`):
+
+      | Tag | Description | Best For |
+      | :--- | :--- | :--- |
+      | `latest` | Current stable release, built from the latest upstream Immich release. | Most users. |
+      | `beta` | Beta release built from upstream v3.0.0-rc.0. | Testing upcoming releases early. |
+
+      Machine learning (`immich-ml`, set via `IMMICH_ML_TAG`) follows the same `latest` and `beta` tags.
+
+      `immich-postgres:latest` and `:14` are both PostgreSQL 14, matching upstream Immich. New installs can use `:18`; upgrading an existing database needs a full dump and restore.
+    setup: |-
+      **PostgreSQL shared memory.** PostgreSQL wants System V IPC, which a jail does not get by default. The compose carries the annotation (`org.freebsd.jail.allow.sysvipc: "true"`, read by ocijail) and the director bundle ships `immich-postgres-template.conf` for the same reason.
+
+      **Machine learning.** `immich-ml` runs a FreeBSD-native onnxruntime on the CPU; there is no GPU acceleration on FreeBSD. Models (about 1 GB) download on first use into `/cache`, so the first start is slow and the rest are not.
+
+      **Network.** The stack shares the host's network stack, so the services find each other over localhost and only 2283 needs to reach the outside. Put the parts on networks of their own and the `*_HOSTNAME` variables name where each one went; fjord does that for you.
+
+      **Managing it.** `podman-compose logs -f` for every service, `podman logs -f immich_server` for one; `podman-compose restart`, `podman-compose down`, and `podman-compose pull && podman-compose up -d` to update.
+    troubleshooting: |-
+      ??? question "ML service keeps restarting"
+          Check memory - the ML service needs at least 2GB RAM:
+          ```bash
+          podman logs immich_machine_learning
+          ```
+          If you see OOM errors, give it more memory or turn the Machine learning choice off.
+
+      ??? question "Database connection errors"
+          Ensure PostgreSQL has started and the sysvipc annotation is working:
+          ```bash
+          podman logs immich_postgres
+          ```
+          The database needs a few seconds to initialize on first run.
+
+      ??? question "Photos not uploading from mobile"
+          Ensure port 2283 is accessible from your network. Check firewall rules:
+          ```bash
+          # PF firewall
+          pass in on egress proto tcp to port 2283
+          ```
+
+      ??? question "Facial recognition not working"
+          The ML service downloads models on first use. Check if models are cached:
+          ```bash
+          podman exec immich_machine_learning ls -la /cache/huggingface
+          ```
 
 services:
   immich-server:
@@ -156,6 +253,7 @@ services:
       DB_HOSTNAME: ${DB_HOSTNAME:-localhost}
       REDIS_HOSTNAME: ${REDIS_HOSTNAME:-localhost}
       IMMICH_MACHINE_LEARNING_URL: http://${IMMICH_ML_HOST:-localhost}:3003
+      IMMICH_MACHINE_LEARNING_ENABLED: ${IMMICH_ML_ENABLED:-true}
       # Immich binds loopback unless told otherwise, so it answers nothing on
       # the host's address -- or on a published port, which forwards to the
       # container's own and not to its loopback.
@@ -179,6 +277,23 @@ services:
       - model-cache:/cache
     env_file:
       - .env
+    restart: always
+
+  # Public links to albums for people with no account. Only with the Public
+  # sharing choice; it reaches the server over localhost and answers on 3000.
+  immich-public-proxy:
+    container_name: immich_public_proxy
+    image: ghcr.io/daemonless/immich-public-proxy:latest
+    network_mode: host
+    profiles: [proxy]
+    environment:
+      IMMICH_URL: http://localhost:2283
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
+      IPP_PORT: "3000"
+    env_file:
+      - .env
+    depends_on:
+      - immich-server
     restart: always
 
   redis:
