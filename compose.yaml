@@ -28,6 +28,9 @@ x-daemonless:
   # reachable from the rest of the house.
   networking:
     immich-server: default
+    # People reach the proxy too (through your reverse proxy), so it goes
+    # where the server goes; it finds the server over the private segment.
+    immich-public-proxy: default
     "*": private
 
   # How each part is FOUND once they are not all sharing one network stack.
@@ -41,6 +44,7 @@ x-daemonless:
     database: DB_HOSTNAME
     redis: REDIS_HOSTNAME
     immich-machine-learning: IMMICH_ML_HOST
+    immich-server: IMMICH_SERVER_HOST
 
   appjail:
     # The database's jail template ships with the bundle: director references it
@@ -165,7 +169,11 @@ x-daemonless:
           label: "No public sharing"
         "on":
           label: "With public sharing"
-          doc: immich-public-proxy answers on 3000 and talks to the server over localhost; put it behind your reverse proxy.
+          doc: >-
+            immich-public-proxy answers on 3000; put it behind your reverse
+            proxy, set PUBLIC_BASE_URL to the address people use, and set the
+            same address as the External domain in Immich's Server Settings
+            so share links point at the proxy.
           profile: proxy
 
   docs:
@@ -280,14 +288,15 @@ services:
     restart: always
 
   # Public links to albums for people with no account. Only with the Public
-  # sharing choice; it reaches the server over localhost and answers on 3000.
+  # sharing choice; it reaches the server at IMMICH_SERVER_HOST (localhost
+  # while everything is on the host) and answers on 3000.
   immich-public-proxy:
     container_name: immich_public_proxy
     image: ghcr.io/daemonless/immich-public-proxy:latest
     network_mode: host
     profiles: [proxy]
     environment:
-      IMMICH_URL: http://localhost:2283
+      IMMICH_URL: http://${IMMICH_SERVER_HOST:-localhost}:2283
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
       IPP_PORT: "3000"
     env_file:
