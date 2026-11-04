@@ -208,7 +208,7 @@ x-daemonless:
       | Tag | Description | Best For |
       | :--- | :--- | :--- |
       | `latest` | Current stable release, built from the latest upstream Immich release. | Most users. |
-      | `beta` | Beta release built from upstream v3.0.0-rc.0. | Testing upcoming releases early. |
+      | `beta` | Same image as `latest`. | Installs already set to `beta`. |
 
       Machine learning (`immich-ml`, set via `IMMICH_ML_TAG`) follows the same `latest` and `beta` tags.
 
