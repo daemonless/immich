@@ -10,7 +10,7 @@ on:
 
 jobs:
   test:
-    uses: daemonless/dbuild/.github/workflows/daemonless-build.yaml@main
+    uses: daemonless/workflows/.github/workflows/daemonless-build.yaml@main
     with:
       image_name: immich
     secrets: inherit
