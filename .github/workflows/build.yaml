@@ -7,10 +7,16 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      variant:
+        description: 'Tag to rebuild (blank = all)'
+        required: false
+        type: string
 
 jobs:
   test:
     uses: daemonless/workflows/.github/workflows/daemonless-build.yaml@main
     with:
       image_name: immich
+      variant: ${{ inputs.variant }}
     secrets: inherit
