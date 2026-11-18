@@ -107,7 +107,7 @@ x-daemonless:
             - from: ghcr.io/daemonless/immich-public-proxy:latest
           oci:
             environment:
-              - IMMICH_URL: "http://127.0.0.1:2283"
+              - IMMICH_URL: "!ENV 'http://${IMMICH_SERVER_HOST:127.0.0.1}:2283'"
               - PUBLIC_BASE_URL: "!ENV '${PUBLIC_BASE_URL}'"
               - IPP_PORT: "3000"
               - TZ: "!ENV '${TZ}'"
@@ -186,6 +186,8 @@ x-daemonless:
     env:
       UPLOAD_LOCATION: Path to store uploaded media
       DB_DATA_LOCATION: Path to store database files
+      CACHE_LOCATION: "Path for the ML model cache (AppJail director only; compose uses a named volume)"
+      REDIS_DATA_LOCATION: "Path for the redis data (AppJail director only; compose uses a named volume)"
       DB_PASSWORD: PostgreSQL database password
       DB_USERNAME: PostgreSQL username
       DB_DATABASE_NAME: PostgreSQL database name

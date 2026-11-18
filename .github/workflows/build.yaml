@@ -15,7 +15,7 @@ on:
 
 jobs:
   test:
-    uses: daemonless/workflows/.github/workflows/daemonless-build.yaml@main
+    uses: daemonless/workflows/.github/workflows/daemonless-build.yaml@v1
     with:
       image_name: immich
       variant: ${{ inputs.variant }}
