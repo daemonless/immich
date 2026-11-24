@@ -27,7 +27,7 @@ These tags apply to the `immich-server` image (set via `IMMICH_TAG`):
 
 Machine learning (`immich-ml`, set via `IMMICH_ML_TAG`) follows the same `latest` and `beta` tags.
 
-`immich-postgres:latest` and `:14` are both PostgreSQL 14, matching upstream Immich. New installs can use `:18`; upgrading an existing database needs a full dump and restore.
+New installs use `immich-postgres:18` (PostgreSQL 18 with VectorChord and pgvector). Existing deployments on `immich-postgres:latest` or `:14` remain on PostgreSQL 14 and will not break on pull; upgrading an existing database from 14 to 18 requires a full `pg_dumpall` and restore.
 
 ## Prerequisites
 Before deploying, ensure your host environment is ready. See the [Quick Start Guide](https://daemonless.io/guides/quick-start) for host setup instructions.
@@ -171,7 +171,7 @@ services:
 
   database:
     container_name: immich_postgres
-    image: ghcr.io/daemonless/immich-postgres:latest
+    image: ghcr.io/daemonless/immich-postgres:18
     network_mode: host
     # FreeBSD requires sysvipc for PostgreSQL shared memory
     annotations:
@@ -279,6 +279,8 @@ Save the files above, then run `appjail-director up`.
 ## Setup Instructions
 
 **PostgreSQL shared memory.** PostgreSQL wants System V IPC, which a jail does not get by default. The compose carries the annotation (`org.freebsd.jail.allow.sysvipc: "true"`, read by ocijail) and the director bundle ships `immich-postgres-template.conf` for the same reason.
+
+**Upgrading PostgreSQL 14 to 18.** Stop `immich_server` while leaving `immich_postgres` running, dump all databases (`podman exec immich_postgres pg_dumpall --clean --if-exists -U postgres > immich-pg14.sql`), stop the stack and move `${DB_DATA_LOCATION}` aside as a backup, set `database` to `ghcr.io/daemonless/immich-postgres:18`, start only `database` and restore (`sed "s/SELECT pg_catalog.set_config('search_path', '', false);/SELECT pg_catalog.set_config('search_path', 'public, pg_catalog', true);/g" immich-pg14.sql | podman exec -i immich_postgres psql --dbname=postgres -U postgres`, substituting your `DB_USERNAME` if changed), then start the full stack.
 
 **Machine learning.** `immich-ml` runs a FreeBSD-native onnxruntime on the CPU; there is no GPU acceleration on FreeBSD. Models (about 1 GB) download on first use into `/cache`, so the first start is slow and the rest are not.
 

@@ -3,7 +3,7 @@ name: immich-test
 
 services:
   database:
-    image: ghcr.io/daemonless/immich-postgres:latest
+    image: ghcr.io/daemonless/immich-postgres:18
     network_mode: host
     annotations:
       org.freebsd.jail.allow.sysvipc: "true"
